@@ -33,7 +33,7 @@ type ToolDefinition struct {
 	Function    func(input json.RawMessage) (string, error)
 }
 
-// runInference sends messages to the Claude API and returns the response
+// runInference sends messages to the Claude API and returns the response. It also specifies which tools are available to the agent.
 func (a *Agent) runInference(ctx context.Context, conversation []anthropic.MessageParam) (*anthropic.Message, error) {
 	anthropicTools := []anthropic.ToolUnionParam{}
 
@@ -69,11 +69,14 @@ func (a *Agent) Run(ctx context.Context) error {
 	fmt.Fprintln(a.Output, "Chat with Claude (use 'ctrl-c' to quit)")
 
 	conversation := []anthropic.MessageParam{}
+
+	// Collect user input
 	scanner := bufio.NewScanner(a.UserInput)
 
 	for {
 		fmt.Fprint(a.Output, USER)
 
+		// If there's no user input, there's no need to continue the loop.
 		if !scanner.Scan() {
 			break
 		}
