@@ -49,9 +49,9 @@ func ListFiles(input json.RawMessage) (string, error) {
 		return "", err
 	}
 
-	result, err L= json.Marshall(files)
+	result, err := json.Marshal(files)
 	if err != nil {
-		return ", err"
+		return "", err
 	}
 
 	return string(result), nil
