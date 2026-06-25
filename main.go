@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -19,19 +18,12 @@ const (
 	TOOL   string = "\x1b[92mtool\x1b[0m: %s(%s)\n" // Colorize the text "tool"
 )
 
-func GenerateSchema[T any]() anthropic.ToolInputSchemaParam {
-	reflector := jsonschema.Reflector{
-		AllowAdditionalProperties: false,
-		DoNotReference:            true,
-	}
-
-	var v T
-
-	schema := reflector.Reflect(v)
-
-	return anthropic.ToolInputSchemaParam{
-		Properties: schema.Properties,
-	}
+// Description should follow best practices: a brief explanation, specifiy the circumstances the tool should be used, and the circumstances that it should not be used.
+type ToolDefinition struct {
+	Name        string                         `json:"name"`
+	Description string                         `json:"description"`
+	InputSchema anthropic.ToolInputSchemaParam `json:"input_schema"`
+	Function    func(input json.RawMessage) (string, error)
 }
 
 type Agent struct {
@@ -39,16 +31,6 @@ type Agent struct {
 	UserInput io.Reader
 	Output    io.Writer
 	Tools     []ToolDefinition
-}
-
-type option func(*Agent) error
-
-// Description should follow best practices: a brief explanation, specifiy the circumstances the tool should be used, and the circumstances that it should not be used.
-type ToolDefinition struct {
-	Name        string                         `json:"name"`
-	Description string                         `json:"description"`
-	InputSchema anthropic.ToolInputSchemaParam `json:"input_schema"`
-	Function    func(input json.RawMessage) (string, error)
 }
 
 func (a *Agent) executeTool(content *anthropic.ContentBlockUnion) anthropic.ContentBlockParamUnion {
@@ -176,46 +158,6 @@ func (a *Agent) Run(ctx context.Context) error {
 	return nil
 }
 
-func WithClient(c *anthropic.Client) option {
-	return func(a *Agent) error {
-		if c == nil {
-			return errors.New("nil is not a valid client")
-		}
-		a.client = c
-		return nil
-	}
-}
-
-func WithInput(r io.Reader) option {
-	return func(a *Agent) error {
-		if r == nil {
-			return errors.New("nil is not a valid reader")
-		}
-		a.UserInput = r
-		return nil
-	}
-}
-
-func WithOutput(w io.Writer) option {
-	return func(a *Agent) error {
-		if w == nil {
-			return errors.New("nil is not a valid writer")
-		}
-		a.Output = w
-		return nil
-	}
-}
-
-func WithTools(td []ToolDefinition) option {
-	return func(a *Agent) error {
-		if td == nil {
-			return errors.New("nil is not a valid tool definition")
-		}
-		a.Tools = td
-		return nil
-	}
-}
-
 func NewAgent(opts ...option) (*Agent, error) {
 	client := anthropic.NewClient()
 
@@ -233,6 +175,21 @@ func NewAgent(opts ...option) (*Agent, error) {
 	}
 
 	return a, nil
+}
+
+func GenerateSchema[T any]() anthropic.ToolInputSchemaParam {
+	reflector := jsonschema.Reflector{
+		AllowAdditionalProperties: false,
+		DoNotReference:            true,
+	}
+
+	var v T
+
+	schema := reflector.Reflect(v)
+
+	return anthropic.ToolInputSchemaParam{
+		Properties: schema.Properties,
+	}
 }
 
 func main() {
