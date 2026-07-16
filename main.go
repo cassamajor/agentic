@@ -1,4 +1,4 @@
-package main
+package agentic
 
 import (
 	"bufio"
@@ -189,18 +189,5 @@ func GenerateSchema[T any]() anthropic.ToolInputSchemaParam {
 
 	return anthropic.ToolInputSchemaParam{
 		Properties: schema.Properties,
-	}
-}
-
-func main() {
-	tools := []ToolDefinition{ReadFileDefinition, ListFilesDefinition, EditFileDefinition}
-
-	agent, err := NewAgent(
-		WithTools(tools),
-	)
-
-	err = agent.Run(context.TODO())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 	}
 }

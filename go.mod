@@ -1,4 +1,4 @@
-module github.com/cassamajor/coding-agent
+module github.com/cassamajor/agentic
 
 go 1.26.5
 

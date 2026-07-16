@@ -1,4 +1,4 @@
-package main
+package agentic
 
 import (
 	"encoding/json"

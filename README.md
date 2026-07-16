@@ -1,14 +1,28 @@
-In this repository, I'm following this Amp article on [How to Build an Agent](https://ampcode.com/notes/how-to-build-an-agent).
+Batteries included agent. In your shell, run:
 
-Additionally, I plan to implement supplemental capabilties to the harness by following Andrej Kaparthy's [Neural Networks: Zero to Hero](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) series.
+```shell
+go get github.com/cassamajor/agentic
+```
 
+```go
+package main
 
-Here, I'm learning about AI competency.
+import (
+	"context"
+	"fmt"
+	"os"
 
+	"github.com/cassamajor/agentic"
+)
 
-# Current tasks:
-- Complete tutorial: [How to Build an Agent](https://ampcode.com/notes/how-to-build-an-agent).
-- Watch and implement [Deep Dive into LLMs like ChatGPT](https://www.youtube.com/watch?v=7xTGNNLPyMI)
+func main() {
+	agent, err := agentic.NewAgent()
 
-# Pending Tasks
-...
+	err = agent.Run(context.TODO())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+	}
+}
+```
+
+Based the Amp article on [How to Build an Agent](https://ampcode.com/notes/how-to-build-an-agent), with additional optimizations.

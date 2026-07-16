@@ -1,4 +1,4 @@
-package main
+package agentic
 
 import (
 	"encoding/json"
@@ -60,7 +60,7 @@ func EditFile(input json.RawMessage) (string, error) {
 	}
 
 	oldContent := string(content)
-	newContent := strings.Replace(oldContent, editFileInput.OldStr, editFileInput.NewStr, -1)
+	newContent := strings.ReplaceAll(oldContent, editFileInput.OldStr, editFileInput.NewStr)
 
 	if oldContent == newContent && editFileInput.OldStr != "" {
 		return "", fmt.Errorf("old_str not found in file")
