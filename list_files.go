@@ -7,7 +7,7 @@ import (
 )
 
 type ListFilesInput struct {
-	Path string `json:"path,omitempty" jsonschema_description:"Optional relative path to list files from. Defaults to current directory is not provided."`
+	Path string `json:"path,omitempty" jsonschema:"Optional relative path to list files from. Defaults to current directory is not provided."`
 }
 
 var ListFilesInputSchema = GenerateSchema[ListFilesInput]()

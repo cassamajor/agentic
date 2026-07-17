@@ -6,7 +6,7 @@ import (
 )
 
 type ReadFileInput struct {
-	Path string `json:"path" jsonschema_description:"The relative path of a file in the working directory."`
+	Path string `json:"path" jsonschema:"The relative path of a file in the working directory."`
 }
 
 func ReadFile(input json.RawMessage) (string, error) {

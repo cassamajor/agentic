@@ -89,14 +89,19 @@ func (a *Agent) runInference(ctx context.Context, conversation []anthropic.Messa
 	return message, err
 }
 
-// Run let's us talk to Claude in a loop.
-//  1. Take user input, and add it to the conversation slice.
+// Run communicates with the Claude using an inner and outer loop.
+// The outer loop handles the user's request, while the inner loop returns Claude's response.
+//
+// Outer Loop:
+//  1. Take input from the user and add it to the conversation slice.
+//
+// Inner Loop:
 //  2. Send the conversation to Claude.
-//  3. Claude responds, which we also add to the conversation slice.
-//  4. Repeat
-//  5. Tool usage example: Claude's response + the tool call are returned in a single message. Then, readUserInput is set to false,
-//     and the tool result is sent to Claude, and Claude responds. readUserInput is then set to true, which then allows us to continue
-//     the conversation.
+//  3. Add Claude's response to the conversation slice.
+//  4. Print Claude's response to the screen.
+//  5. If there is a tool request, execute the tool and collect the response. Append the response to the conversation and resume from the beginning of the inner loop,
+//     which will send the tool response to Claude. Claude can then react to the tool response without interaction from the user.
+//  6. If there is not a tool request, then exit the inner loop and return to the outer loop.
 func (a *Agent) Run(ctx context.Context) error {
 	fmt.Fprintln(a.Output, "Chat with Claude (use 'ctrl-c' to quit)")
 
@@ -105,54 +110,50 @@ func (a *Agent) Run(ctx context.Context) error {
 	// Collect user input
 	scanner := bufio.NewScanner(a.UserInput)
 
-	readUserInput := true
+	// Begin outer loop
 	for {
-		if readUserInput {
+		fmt.Fprint(a.Output, USER)
 
-			fmt.Fprint(a.Output, USER)
+		if !scanner.Scan() {
+			break // If there's no user input, stop. There's no need to continue the loop.
+		}
 
-			// If there's no user input, there's no need to continue the loop.
-			if !scanner.Scan() {
-				break
+		// Store user input
+		userInput := scanner.Text()
+		userMessage := anthropic.NewUserMessage(
+			anthropic.NewTextBlock(userInput),
+		)
+
+		conversation = append(conversation, userMessage)
+
+		// Begin inner loop
+		for {
+			// Send user input to Anthropic API and receive a response
+			message, err := a.runInference(ctx, conversation)
+			if err != nil {
+				return err
 			}
 
-			userInput := scanner.Text()
+			// Add agent response to the conversation
+			conversation = append(conversation, message.ToParam())
 
-			// Store user input
-			userMessage := anthropic.NewUserMessage(
-				anthropic.NewTextBlock(userInput),
-			)
+			toolResults := []anthropic.ContentBlockParamUnion{}
 
-			conversation = append(conversation, userMessage)
-		}
-
-		// Send user input to Anthropic API and receive a response
-		message, err := a.runInference(ctx, conversation)
-		if err != nil {
-			return err
-		}
-
-		// Store the agent response
-		conversation = append(conversation, message.ToParam())
-
-		toolResults := []anthropic.ContentBlockParamUnion{}
-
-		// Share the agent response with the user
-		for _, content := range message.Content {
-			switch content.Type {
-			case "text":
-				fmt.Fprintf(a.Output, CLAUDE, content.Text)
-			case "tool_use":
-				result := a.executeTool(&content)
-				toolResults = append(toolResults, result)
+			// Print the agent response to the user
+			for _, content := range message.Content {
+				switch content.Type {
+				case "text":
+					fmt.Fprintf(a.Output, CLAUDE, content.Text)
+				case "tool_use":
+					result := a.executeTool(&content)
+					toolResults = append(toolResults, result)
+				}
 			}
+			if len(toolResults) == 0 {
+				break // back to the outer loop
+			}
+			conversation = append(conversation, anthropic.NewUserMessage(toolResults...))
 		}
-		if len(toolResults) == 0 {
-			readUserInput = true
-			continue
-		}
-		readUserInput = false
-		conversation = append(conversation, anthropic.NewUserMessage(toolResults...))
 	}
 
 	return nil

@@ -11,9 +11,9 @@ import (
 )
 
 type EditFileInput struct {
-	Path   string `json:"path" jsonschema_description:"The path to the file"`
-	OldStr string `json:"old_str" jsonschema_description:"Text to search for - must match exactly and musto nly have one match exactly"`
-	NewStr string `json:"new_str" jsonschema_description:"Text to replace old_str with"`
+	Path   string `json:"path" jsonschema:"The path to the file"`
+	OldStr string `json:"old_str" jsonschema:"Text to search for - must match exactly and musto nly have one match exactly"`
+	NewStr string `json:"new_str" jsonschema:"Text to replace old_str with"`
 }
 
 var EditFileInputSchema = GenerateSchema[EditFileInput]()
