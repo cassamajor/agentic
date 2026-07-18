@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	USER   string = "\x1b[94mYou\x1b[0m: "          // Colorize the text "You"
-	CLAUDE string = "\x1b[93mClaude\x1b[0m: %s\n"   // Colorize the text "Claude"
-	TOOL   string = "\x1b[92mtool\x1b[0m: %s(%s)\n" // Colorize the text "tool"
+	USER string = "\x1b[94mYou\x1b[0m: "          // Colorize the text "You"
+	LLM  string = "\x1b[93mLLM\x1b[0m: %s\n"      // Colorize the text "LLM"
+	TOOL string = "\x1b[92mtool\x1b[0m: %s(%s)\n" // Colorize the text "tool"
 )
 
 // Description should follow best practices: a brief explanation, specifiy the circumstances the tool should be used, and the circumstances that it should not be used.
@@ -28,6 +28,7 @@ type ToolDefinition struct {
 
 type Agent struct {
 	client    *anthropic.Client
+	model     string
 	UserInput io.Reader
 	Output    io.Writer
 	Tools     []ToolDefinition
@@ -62,7 +63,7 @@ func (a *Agent) executeTool(content *anthropic.ContentBlockUnion) anthropic.Cont
 	return anthropic.NewToolResultBlock(content.ID, response, false)
 }
 
-// runInference sends messages to the Claude API and returns the response. It also specifies which tools are available to the agent.
+// runInference sends messages to the LLM and returns the response. It also specifies which tools are available to the agent.
 func (a *Agent) runInference(ctx context.Context, conversation []anthropic.MessageParam) (*anthropic.Message, error) {
 	anthropicTools := []anthropic.ToolUnionParam{}
 
@@ -79,7 +80,7 @@ func (a *Agent) runInference(ctx context.Context, conversation []anthropic.Messa
 	}
 
 	messageParams := anthropic.MessageNewParams{
-		Model:     anthropic.ModelClaudeOpus4_8,
+		Model:     a.model,
 		MaxTokens: int64(1042),
 		Messages:  conversation,
 		Tools:     anthropicTools,
@@ -89,21 +90,21 @@ func (a *Agent) runInference(ctx context.Context, conversation []anthropic.Messa
 	return message, err
 }
 
-// Run communicates with the Claude using an inner and outer loop.
-// The outer loop handles the user's request, while the inner loop returns Claude's response.
+// Run communicates with the LLM using an inner and outer loop.
+// The outer loop handles the user's request, while the inner loop returns the LLM's response.
 //
 // Outer Loop:
 //  1. Take input from the user and add it to the conversation slice.
 //
 // Inner Loop:
-//  2. Send the conversation to Claude.
-//  3. Add Claude's response to the conversation slice.
-//  4. Print Claude's response to the screen.
+//  2. Send the conversation to the LLM.
+//  3. Add the LLM's response to the conversation slice.
+//  4. Print the LLM's response to the screen.
 //  5. If there is a tool request, execute the tool and collect the response. Append the response to the conversation and resume from the beginning of the inner loop,
-//     which will send the tool response to Claude. Claude can then react to the tool response without interaction from the user.
+//     which will send the tool response to the LLM. The LLM can then react to the tool response without interaction from the user.
 //  6. If there is not a tool request, then exit the inner loop and return to the outer loop.
 func (a *Agent) Run(ctx context.Context) error {
-	fmt.Fprintln(a.Output, "Chat with Claude (use 'ctrl-c' to quit)")
+	fmt.Fprintln(a.Output, "Chat with an LLM (use 'ctrl-c' to quit)")
 
 	conversation := []anthropic.MessageParam{}
 
@@ -115,7 +116,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		fmt.Fprint(a.Output, USER)
 
 		if !scanner.Scan() {
-			break // If there's no user input, stop. There's no need to continue the loop.
+			break // If there's no user input, exit the outer loop (exit the function call).
 		}
 
 		// Store user input
@@ -143,14 +144,14 @@ func (a *Agent) Run(ctx context.Context) error {
 			for _, content := range message.Content {
 				switch content.Type {
 				case "text":
-					fmt.Fprintf(a.Output, CLAUDE, content.Text)
+					fmt.Fprintf(a.Output, LLM, content.Text)
 				case "tool_use":
 					result := a.executeTool(&content)
 					toolResults = append(toolResults, result)
 				}
 			}
 			if len(toolResults) == 0 {
-				break // back to the outer loop
+				break // exit the inner loop, return back to the outer loop
 			}
 			conversation = append(conversation, anthropic.NewUserMessage(toolResults...))
 		}
@@ -166,6 +167,7 @@ func NewAgent(opts ...option) (*Agent, error) {
 		client:    &client,
 		UserInput: os.Stdin,
 		Output:    os.Stdout,
+		model:     anthropic.ModelClaudeOpus4_8,
 	}
 
 	for _, opt := range opts {

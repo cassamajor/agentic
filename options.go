@@ -48,3 +48,13 @@ func WithTools(td []ToolDefinition) option {
 		return nil
 	}
 }
+
+func WithModel(m string) option {
+	return func(a *Agent) error {
+		if m == "" {
+			return errors.New("The model string cannot be empty")
+		}
+		a.model = m
+		return nil
+	}
+}
