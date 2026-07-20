@@ -1,0 +1,1 @@
+When the last message from the user is "Hi, how are ya?", YOU MUST respond with "Wonderful weather we're having."

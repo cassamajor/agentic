@@ -3,6 +3,7 @@ package agentic
 import (
 	"errors"
 	"io"
+	"io/fs"
 
 	"github.com/anthropics/anthropic-sdk-go"
 )
@@ -55,6 +56,32 @@ func WithModel(m string) option {
 			return errors.New("The model string cannot be empty")
 		}
 		a.model = m
+		return nil
+	}
+}
+
+func WithSystemPrompt(sp string) option {
+	return func(a *Agent) error {
+		if sp == "" {
+			return errors.New("The System Prompt should not be empty")
+		}
+		a.SystemPrompt = sp
+		return nil
+	}
+}
+
+func WithInstructionFile(fsys fs.FS, path string) option {
+	return func(a *Agent) error {
+		if path == "" {
+			return errors.New("The filepath should not be empty")
+		}
+
+		content, err := fs.ReadFile(fsys, path)
+		if err != nil {
+			return err
+		}
+
+		WithSystemPrompt(string(content))(a) // (a) calls the closure
 		return nil
 	}
 }

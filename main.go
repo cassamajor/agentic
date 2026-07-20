@@ -27,11 +27,12 @@ type ToolDefinition struct {
 }
 
 type Agent struct {
-	client    *anthropic.Client
-	model     string
-	UserInput io.Reader
-	Output    io.Writer
-	Tools     []ToolDefinition
+	client       *anthropic.Client
+	model        string
+	SystemPrompt string
+	UserInput    io.Reader
+	Output       io.Writer
+	Tools        []ToolDefinition
 }
 
 func (a *Agent) executeTool(content *anthropic.ContentBlockUnion) anthropic.ContentBlockParamUnion {
@@ -81,6 +82,7 @@ func (a *Agent) runInference(ctx context.Context, conversation []anthropic.Messa
 
 	messageParams := anthropic.MessageNewParams{
 		Model:     a.model,
+		System:    []anthropic.TextBlockParam{{Text: a.SystemPrompt}},
 		MaxTokens: int64(1042),
 		Messages:  conversation,
 		Tools:     anthropicTools,

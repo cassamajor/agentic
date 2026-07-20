@@ -21,6 +21,7 @@ func main() {
 		agentic.WithTools(tools),
 		agentic.WithClient(&client),
 		agentic.WithModel("LFM2.5-8B-A1B-MLX-8bit"),
+		agentic.WithInstructionFile(os.DirFS("."), "SYSTEM.md"),
 	)
 
 	err = agent.Run(context.TODO())
