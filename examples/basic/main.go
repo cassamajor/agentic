@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	tools := []agentic.ToolDefinition{agentic.ReadFileDefinition, agentic.ListFilesDefinition, agentic.EditFileDefinition}
+	tools := []agentic.ToolDefinition{agentic.ReadFileDefinition, agentic.ListFilesDefinition, agentic.EditFileDefinition, agentic.BashToolDefinition}
 
 	client := anthropic.NewClient(
 		option.WithBaseURL("http://localhost:8000"),
