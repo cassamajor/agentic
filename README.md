@@ -37,7 +37,7 @@ func main() {
 }
 ```
 
-Based the Amp article on [How to Build an Agent](https://ampcode.com/notes/how-to-build-an-agent), with additional optimizations.
+Initially inspired by the Amp article [How to Build an Agent](https://ampcode.com/notes/how-to-build-an-agent), with additional optimizations inspired by [Have You Built an Agent Harness Yet?](https://alejandromp.com/development/blog/have-you-built-an-agent-harness-already/).
 
 ## Thoughts & TODOs
 Explore adding compatibility with MCP tools.
